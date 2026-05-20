@@ -1,0 +1,42 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install necessary dependencies and clean up to save memory
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    git \
+    build-essential \
+    cmake \
+    zip \
+    unzip \
+    libboost-all-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /app/brainflow
+
+COPY brainflow/master.zip /app/brainflow
+
+# Clone and build brainflow
+RUN unzip brainflow/master.zip -d brainflow/ && \
+    cd brainflow/brainflow-master && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd ../python_package && \
+    python setup.py install && \
+    cd /app && \
+    rm -rf /brainflow
+
+
+# Install Python dependencies
+RUN pip install --no-cache-dir numpy paho-mqtt pandas scipy matplotlib pyserial scikit-learn
+
+# Copy the application code
+COPY . /app/
+
+# Run the application
+CMD ["python", "-m", "ciervo.io.stream"]

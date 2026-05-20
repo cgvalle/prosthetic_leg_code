@@ -1,0 +1,11 @@
+numpy
+scipy
+scikit-learn
+seaborn
+tqdm
+paho-mqtt
+influxdb-client
+brainflow
+lightning
+pandas
+pyqtgraph==0.12.4

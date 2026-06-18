@@ -34,7 +34,7 @@ def remove_nan_values(features, labels):
 
 if __name__ == "__main__":
     # Load data
-    files = ['caminata_normal']
+    files = ['arm2']
 
     data = []
     for file in files:
@@ -50,9 +50,11 @@ if __name__ == "__main__":
     print(f"Recording time: {n_points/250} s")
 
     df = pd.DataFrame(data.T, columns=p.CH_NAMES)
+    print(df)
     df['labels'] = df['MARKERS']
-
+    print(df)
     print(set(df['labels'].tolist()))
+    
 
     df = df[df['labels'] != 0]
     df['labels'] = df['labels'].apply(lambda x: 1 if x == 2 else 0)
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     plt.legend()
 
     plt.show()
-
+    print(df)
     train_data, train_label, test_data, test_label = train_test_split([df], 
                                          columna=['C1', 'C2', 'C3', 'C4'],
                                          window_size=25,

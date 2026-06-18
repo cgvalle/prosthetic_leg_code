@@ -2,14 +2,14 @@ import os; os.system('clear')
 from paho.mqtt import client as mqtt_client
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtGui, QtCore
+from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 import leg.parameters as p
 from leg.aux_tools import Buffer
 import argparse
 
 
-broker = '192.168.0.101'
+broker = '127.0.0.1'
 port = 1883
 topic = "data"
 
@@ -33,15 +33,16 @@ class Graph:
         self.buffer = Buffer(self.window, roll=True)
 
 
-        self.app = QtGui.QApplication([])
-        self.win = pg.GraphicsWindow(title='BrainFlow Plot', size=(800, 600))
+        self.app = QtWidgets.QApplication([])
+        self.win = pg.GraphicsLayoutWidget(title='BrainFlow Plot', size=(800, 600))
+        self.win.show()
 
         self._init_timeseries()
 
         timer = QtCore.QTimer()
         timer.timeout.connect(self.update)
         timer.start(self.update_speed_ms)
-        QtGui.QApplication.instance().exec_()
+        QtWidgets.QApplication.instance().exec()
 
 
     def _init_timeseries(self):
@@ -55,8 +56,8 @@ class Graph:
             if 'C' in p.CH_NAMES[i]:
                 po.setYRange(-50, 50)
 
-            if 'MARKERS' in p.CH_NAMES[i]:
-                po.setYRange(90, 180)
+            #if 'MARKERS' in p.CH_NAMES[i]:
+            #    po.setYRange(0, 3)
 
             if 'AX' in p.CH_NAMES[i]:
                 po.setYRange(-1, 1)

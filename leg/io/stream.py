@@ -42,7 +42,7 @@ def find_openbci():
         # Exclude current terminal "/dev/tty"
         ports = glob.glob('/dev/tty[A-Za-z]*')
     elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
+        ports = glob.glob('/dev/cu.*')
     else:
         raise EnvironmentError('Unsupported platform')
 
@@ -54,9 +54,10 @@ def find_openbci():
             result.append(port)
         except (OSError, serial.SerialException):
             pass
-
     open_bci_ports = [port for port in result if 'usb' in port.lower()]
-    #print(open_bci_ports)
+    print(f"OpenBCI en puerto: {open_bci_ports}")
+    open_bci_ports = ['/dev/cu.usbserial-DN00940V']  # For testing, hardcode the port. Replace with the above line for actual use.
+    
     #open_bci_ports = ['/dev/ttyAMA1']
 
     assert len(open_bci_ports) > 0, 'No se encontraron dispositivos OpenBCI'
@@ -169,7 +170,7 @@ class Publish:
             #print(data[12, :][:20])
             paquetes = np.diff(data[12, :])
 
-            if np.sum(paquetes) == 0 and len(data[12, :])> 10 :
+            if np.sum(paquetes) == 0 and len(data[12, :]) > 10:
                 print("Reiniciando")
                 prev_packaquete_loss_count = packaquete_loss_count
                 packaquete_loss_count += 1
@@ -179,17 +180,8 @@ class Publish:
                     self.board_shim.prepare_session()
                     self.board_shim.start_stream()
 
-
-            
             if prev_packaquete_loss_count == packaquete_loss_count:
                 packaquete_loss_count = 0
-                    
-
-
-
-            
-            
-             
 
             self.client.publish(self.topic, data_bytes, qos=0)
 
@@ -239,7 +231,6 @@ def main():
         board_shim.prepare_session()
         # Configure OpenBCI
         # x (CHANNEL, POWER_DOWN, GAIN_SET, INPUT_TYPE_SET, BIAS_SET, SRB2_SET, SRB1_SET) X
-
         for i in range(1, 9):
             ch = create_channel_setting_command(channel=i,
                                                 power_down= 0 if i >4 else 1,
@@ -254,6 +245,7 @@ def main():
             sleep(0.1)
 
         #board_shim.add_streamer(args.streamer_params)
+        
         board_shim.start_stream()
         Publish(board_shim)
     except BaseException:

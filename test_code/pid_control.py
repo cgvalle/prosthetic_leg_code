@@ -3,9 +3,9 @@ import time
 from smbus2 import SMBus
 
 # ── Motor (pins match pwm.py) ─────────────────────────────────────────────────
-IN1 = 18
-IN2 = 19
-FREQ = 1000
+IN1 = 13
+IN2 = 18
+FREQ = 10000
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(IN1, GPIO.OUT)
@@ -20,18 +20,24 @@ pwm2.start(0)
 DEVICE_AS5600 = 0x36
 bus = SMBus(1)
 
+
+ESTIRADA = 230   # fully extended raw angle
+CONTRAIDA = 170  # fully contracted raw angle
+ANGLE_MAX = 90   # degrees, fully contracted
+
+def _clamp(x, lo=0.0, hi=1.0):
+    return lo if x < lo else hi if x > hi else x
+
 def read_angle():
-    """Return current shaft angle in degrees [0, 360)."""
+    """Return knee angle in degrees [0, 90] (0 = fully extended, 90 = fully contracted)."""
     data = bus.read_i2c_block_data(DEVICE_AS5600, 0x0C, 2)
     raw = (data[0] << 8) | data[1]
-    return raw * 360.0 / 4096.0
+    raw_deg = raw * 360.0 / 4096.0
+    return _clamp((raw_deg - ESTIRADA) / (CONTRAIDA - ESTIRADA)) * ANGLE_MAX
 
 def angle_error(target, current):
-    """Shortest-path signed error in (-180, 180]."""
-    err = (target - current) % 360.0
-    if err > 180.0:
-        err -= 360.0
-    return err
+    """Signed error in degrees. Range is linear [0, 90] so no wraparound needed."""
+    return target - current
 
 # ── Motor driver ──────────────────────────────────────────────────────────────
 MIN_SPEED = 35   # minimum duty cycle to overcome static friction (tune this)
@@ -89,10 +95,10 @@ class PID:
 def run_to_angle(target_angle, kp=0.8, ki=0.05, kd=0.05,
                  tolerance=1.5, timeout=10.0, dt=0.01):
     """
-    Drive the motor until the shaft reaches target_angle (degrees).
+    Drive the motor until the knee reaches target_angle (degrees).
 
     Args:
-        target_angle: Desired angle in [0, 360).
+        target_angle: Desired knee angle in [0, 90] (0 = extended, 90 = contracted).
         kp, ki, kd:   PID gains (tune for your motor + load).
         tolerance:    Acceptable error in degrees before declaring success.
         timeout:      Maximum run time in seconds.
@@ -141,10 +147,11 @@ def run_to_angle(target_angle, kp=0.8, ki=0.05, kd=0.05,
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     try:
-        #target = float(input("Enter target angle (0–360): "))
-        target = 240
-        target = target % 360.0
-        run_to_angle(target, kp=5.0, ki=0.10, kd=0.15)
+        for target in [0, 90, 0]:
+            #target = float(input("Enter target knee angle (0–90): "))
+            # target = 45.0   # mid-flex, degrees [0=extended, 90=contracted]
+            run_to_angle(target, kp=5.0, ki=0.10, kd=0.15)
+            motor_stop()
 
 
     finally:
@@ -152,7 +159,3 @@ if __name__ == "__main__":
         pwm1.stop()
         pwm2.stop()
         GPIO.cleanup()
-
-
-# estirada es 240
-# contracción es 170

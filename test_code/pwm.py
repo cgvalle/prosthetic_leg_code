@@ -2,9 +2,9 @@ import RPi.GPIO as GPIO
 import time
 
 IN1 = 18  # Forward PWM pin
-IN2 = 19  # Backward PWM pin
+IN2 = 13  # Backward PWM pin
 
-FREQ = 1000  # 1 kHz
+FREQ = 10000  # 1 kHz
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(IN1, GPIO.OUT)
@@ -32,13 +32,16 @@ def motor_stop():
 
 # Example
 try: 
-    duration = 0.5
-    motor_forward(100)   # 75% speed forward
-    time.sleep(duration)
+    duration = 1
+    # LEFT: contracción (amarillo)
+    #motor_forward(100)   # 75% speed forward
+    #time.sleep(duration)
+    motor_stop()
 
-    #motor_backward(100)  # 50% speed backward
-    time.sleep(duration)
 
+    # RIGHT: extension (naranjo)
+    motor_backward(100)  # 50% speed backward
+    time.sleep(duration)
     motor_stop()
 
     # keyboard cancell

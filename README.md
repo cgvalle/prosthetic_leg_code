@@ -1,6 +1,6 @@
 # Basic usage
 
-
+  source .venv/bin/activate
 ## Stream data
 python -m leg.io.stream
 

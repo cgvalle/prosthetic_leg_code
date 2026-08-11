@@ -14,10 +14,18 @@ port = 1883
 topic = "data"
 
 DEVICE_AS5600 = 0x36
-IN1 = 18
-IN2 = 19
-FREQ = 1000
-MIN_SPEED = 35
+IN1 = 13
+IN2 = 18
+FREQ = 10000
+MIN_SPEED = 100
+
+ESTIRADA = 235   # fully extended raw angle
+CONTRAIDA = 170  # fully contracted raw angle
+ANGLE_MAX = 90   # degrees, fully contracted
+
+
+def _clamp(x, lo=0.0, hi=1.0):
+    return lo if x < lo else hi if x > hi else x
 
 
 class PID:
@@ -44,7 +52,7 @@ class PID:
 
 class MotorPIDController:
 
-    def __init__(self, kp=5.0, ki=0.10, kd=0.15, dt=0.01):
+    def __init__(self, kp=0.5, ki=0, kd=0, dt=0.01):
         import RPi.GPIO as GPIO
         from smbus2 import SMBus
 
@@ -68,16 +76,16 @@ class MotorPIDController:
         thread.start()
 
     def _read_angle(self):
+        """Return knee angle in degrees [0, 90] (0 = fully extended, 90 = fully contracted)."""
         data = self._bus.read_i2c_block_data(DEVICE_AS5600, 0x0C, 2)
         raw = (data[0] << 8) | data[1]
-        return raw * 360.0 / 4096.0
+        raw_deg = raw * 360.0 / 4096.0
+        return _clamp((raw_deg - ESTIRADA) / (CONTRAIDA - ESTIRADA)) * ANGLE_MAX
 
     @staticmethod
     def _angle_error(target, current):
-        err = (target - current) % 360.0
-        if err > 180.0:
-            err -= 360.0
-        return err
+        """Signed error in degrees. Range is linear [0, 90] so no wraparound needed."""
+        return target - current
 
     def _drive(self, output):
         output = max(-100.0, min(100.0, output))
@@ -152,7 +160,7 @@ class RealTimeInference:
         self._angle = 0
         self._streak = 0      # positive = consecutive up, negative = consecutive down
         self._base_step = 5
-        self._accel_step = 5  # extra degrees per consecutive same-direction prediction
+        self._accel_step = 1  # extra degrees per consecutive same-direction prediction
         self._max_step = 40   # cap
 
         # preprocesamiento
@@ -186,7 +194,7 @@ class RealTimeInference:
 
     @angle.setter
     def angle(self, value):
-        self._angle = np.clip(value, 90, 175)
+        self._angle = np.clip(value, 0, 90)
 
     def on_message(self, client, userdata, msg):
         data = np.frombuffer(msg.payload, dtype=p.PRECISION)
@@ -204,6 +212,9 @@ class RealTimeInference:
                 features, _ = self.emg_prepro(emg)
                 features = features.reshape(1, -1)
 
+                # replace inf with 0
+                features = np.where(np.isinf(features), 0, features)
+
             if self.emg_model is not None:
                 prediction = self.emg_model.predict(features)[0]
 
@@ -214,6 +225,7 @@ class RealTimeInference:
 
                 step = min(self._base_step + (abs(self._streak) - 1) * self._accel_step,
                            self._max_step)
+
 
                 prev = self._angle
                 if prediction == 1:

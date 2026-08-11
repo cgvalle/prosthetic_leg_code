@@ -21,7 +21,7 @@ DEVICE_AS5600 = 0x36
 bus = SMBus(1)
 
 
-ESTIRADA = 230   # fully extended raw angle
+ESTIRADA = 240   # fully extended raw angle
 CONTRAIDA = 170  # fully contracted raw angle
 ANGLE_MAX = 90   # degrees, fully contracted
 
@@ -40,7 +40,7 @@ def angle_error(target, current):
     return target - current
 
 # ── Motor driver ──────────────────────────────────────────────────────────────
-MIN_SPEED = 35   # minimum duty cycle to overcome static friction (tune this)
+MIN_SPEED = 100   # minimum duty cycle to overcome static friction (tune this)
 
 def motor_drive(output):
     """
@@ -92,7 +92,7 @@ class PID:
         return self.kp * error + self.ki * self._integral + self.kd * derivative
 
 # ── Position control loop ─────────────────────────────────────────────────────
-def run_to_angle(target_angle, kp=0.8, ki=0.05, kd=0.05,
+def run_to_angle(target_angle, kp=7.0, ki=0.10, kd=0.20,
                  tolerance=1.5, timeout=10.0, dt=0.01):
     """
     Drive the motor until the knee reaches target_angle (degrees).
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         for target in [0, 90, 0]:
             #target = float(input("Enter target knee angle (0–90): "))
             # target = 45.0   # mid-flex, degrees [0=extended, 90=contracted]
-            run_to_angle(target, kp=5.0, ki=0.10, kd=0.15)
+            run_to_angle(target, kp=10.0, ki=10, kd=0.15)
             motor_stop()
 
 

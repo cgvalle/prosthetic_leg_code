@@ -9,3 +9,6 @@ brainflow
 lightning
 pandas
 pyqtgraph==0.12.4
+RPi.GPIO
+smbus2
+joblib

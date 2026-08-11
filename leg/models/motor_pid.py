@@ -40,7 +40,7 @@ class PID:
 
 class MotorPIDController:
 
-    def __init__(self, kp=0.5, ki=0, kd=0, dt=0.01):
+    def __init__(self, kp=0.5, ki=0.01, kd=0.01, dt=0.01):
         import RPi.GPIO as GPIO
         from smbus2 import SMBus
 

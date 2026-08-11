@@ -11,7 +11,7 @@ broker = p.BROKER_HOST
 port = 1883
 topic = "data"
 
-CSV_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'knee_angle_gait.csv')
+CSV_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'knee_angle_gait_short.csv')
 
 
 def on_connect(client, userdata, flags, rc, properties):
@@ -89,11 +89,11 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--speed', type=float, default=2, help='Playback speed multiplier')
+    parser.add_argument('--speed', type=float, default=0.1, help='Playback speed multiplier')
     parser.add_argument('--csv', type=str, default=CSV_PATH, help='Path to angle csv file')
     parser.add_argument('--no-loop', action='store_true', help='Send the cycle once and stop')
     parser.add_argument('--debug', action='store_true', help='Disable motor control')
-    parser.add_argument('--n-samples', type=int, default=20,
+    parser.add_argument('--n-samples', type=int, default=5,
                          help='Downsample the angle curve to N evenly-spaced samples')
     parser.add_argument('--log-csv', type=str, default=None,
                          help='Save target vs. current angle over time to this CSV')

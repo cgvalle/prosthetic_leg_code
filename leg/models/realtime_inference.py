@@ -203,50 +203,57 @@ class RealTimeInference:
 
     def update(self):
         angle_list = []
-        while True:
-            tic = time.time()
-            data = self.buffer.data
+        try:
+            while True:
+                tic = time.time()
+                data = self.buffer.data
 
-            emg = data[self.emg_idx, :]
-            if self.emg_prepro is not None:
-                features, _ = self.emg_prepro(emg)
-                features = features.reshape(1, -1)
+                emg = data[self.emg_idx, :]
+                if self.emg_prepro is not None:
+                    features, _ = self.emg_prepro(emg)
+                    features = features.reshape(1, -1)
 
-                # replace inf with 0
-                features = np.where(np.isinf(features), 0, features)
+                    # replace inf with 0
+                    features = np.where(np.isinf(features), 0, features)
 
-            if self.emg_model is not None:
-                prediction = self.emg_model.predict(features)[0]
+                if self.emg_model is not None:
+                    prediction = self.emg_model.predict(features)[0]
 
-                if prediction == 1:
-                    self._streak = self._streak + 1 if self._streak > 0 else 1
-                else:
-                    self._streak = self._streak - 1 if self._streak < 0 else -1
+                    if prediction == 1:
+                        self._streak = self._streak + 1 if self._streak > 0 else 1
+                    else:
+                        self._streak = self._streak - 1 if self._streak < 0 else -1
 
-                step = min(self._base_step + (abs(self._streak) - 1) * self._accel_step,
-                           self._max_step)
+                    step = min(self._base_step + (abs(self._streak) - 1) * self._accel_step,
+                               self._max_step)
 
 
-                prev = self._angle
-                if prediction == 1:
-                    self.angle += step
-                else:
-                    self.angle -= step
+                    prev = self._angle
+                    if prediction == 1:
+                        self.angle += step
+                    else:
+                        self.angle -= step
 
-                if self._angle == prev:
-                    self._streak = 0
+                    if self._angle == prev:
+                        self._streak = 0
 
-                angle_list.append(float(self._angle))
-                if len(angle_list) > 10:
-                    angle_list = angle_list[-10:]
+                    angle_list.append(float(self._angle))
+                    if len(angle_list) > 10:
+                        angle_list = angle_list[-10:]
 
-                if self.motor_control:
-                    self.motor.target = self._angle
+                    if self.motor_control:
+                        self.motor.target = self._angle
 
-                self.client.publish('marker', int(self._angle), qos=0)
+                    self.client.publish('marker', int(self._angle), qos=0)
 
-            toc = time.time()
-            time.sleep(np.max([self.update_speed - (toc - tic), 0]))
+                toc = time.time()
+                time.sleep(np.max([self.update_speed - (toc - tic), 0]))
+        except KeyboardInterrupt:
+            self.angle = 0
+            if self.motor_control:
+                self.motor.target = 0
+            self.client.publish('marker', 0, qos=0)
+            time.sleep(0.1)  # give the publish time to go out before disconnecting
 
 
 def on_connect(client, userdata, flags, rc, properties):

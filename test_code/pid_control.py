@@ -147,7 +147,7 @@ def run_to_angle(target_angle, kp=7.0, ki=0.10, kd=0.20,
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     try:
-        for target in [0, 20, 0]:
+        for target in [0, 0, 0]:
             #target = float(input("Enter target knee angle (0–90): "))
             # target = 45.0   # mid-flex, degrees [0=extended, 90=contracted]
             run_to_angle(target, kp=10.0, ki=10, kd=0.15)

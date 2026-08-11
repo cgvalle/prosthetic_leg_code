@@ -58,6 +58,7 @@ def send_angles(csv_path=CSV_PATH, speed=1.0, loop=True, motor_control=True, n_s
     try:
         while True:
             for angle in angles:
+                angle -= 7
                 print(angle)
                 client.publish('marker', int(angle), qos=0)
                 if motor is not None:
@@ -66,9 +67,11 @@ def send_angles(csv_path=CSV_PATH, speed=1.0, loop=True, motor_control=True, n_s
                     log.append((time.time() - t_start, angle,
                                  motor.current if motor is not None else None))
                 time.sleep(dt)
+            time.sleep(1.5)
             if not loop:
                 break
     except KeyboardInterrupt:
+        motor.target = 0
         client.publish('marker', 0, qos=0)
         time.sleep(0.1)  # give the publish time to go out before disconnecting
     finally:
@@ -90,7 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('--csv', type=str, default=CSV_PATH, help='Path to angle csv file')
     parser.add_argument('--no-loop', action='store_true', help='Send the cycle once and stop')
     parser.add_argument('--debug', action='store_true', help='Disable motor control')
-    parser.add_argument('--n-samples', type=int, default=90,
+    parser.add_argument('--n-samples', type=int, default=20,
                          help='Downsample the angle curve to N evenly-spaced samples')
     parser.add_argument('--log-csv', type=str, default=None,
                          help='Save target vs. current angle over time to this CSV')

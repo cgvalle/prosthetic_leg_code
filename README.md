@@ -11,6 +11,10 @@ python -m leg.plots.stream_plot
 
 ## Realtime inference
 python -m leg.models.realtime_inference 
+python -m leg.models.gait_csv_sender
+
+
+
 
 
 ## send training commands

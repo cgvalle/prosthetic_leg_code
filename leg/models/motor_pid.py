@@ -56,6 +56,7 @@ class MotorPIDController:
         self._pwm2.start(0)
 
         self._target = self._read_angle()
+        self._current = self._target
         self._pid = PID(kp, ki, kd)
         self._dt = dt
         self._running = True
@@ -101,6 +102,11 @@ class MotorPIDController:
     def target(self, value):
         self._target = float(value)
 
+    @property
+    def current(self):
+        """Last angle read by the control loop, in degrees [0, 90]."""
+        return self._current
+
     def _loop(self):
         t_prev = time.time()
         while self._running:
@@ -110,6 +116,7 @@ class MotorPIDController:
                 time.sleep(self._dt - loop_dt)
                 continue
             current = self._read_angle()
+            self._current = current
             error = self._angle_error(self._target, current)
             output = self._pid.compute(error, loop_dt)
             self._drive(output)
